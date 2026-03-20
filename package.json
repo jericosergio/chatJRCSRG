@@ -1,8 +1,8 @@
 {
-  "name": "llm-chat-sqlite",
+  "name": "chatjrcsrg",
   "version": "1.0.0",
   "private": true,
-  "description": "Session-based LLM chat UI with SQLite persistence",
+  "description": "Session-based chatJRCSRG UI with SQLite persistence",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

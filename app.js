@@ -68,10 +68,39 @@ const cancelLinkWarningBtnEl = document.getElementById('cancelLinkWarningBtn');
 const closeLinkWarningBtnEl = document.getElementById('closeLinkWarningBtn');
 const trustDomainCheckboxEl = document.getElementById('trustDomainCheckbox');
 
+const BUTTON_ICON_BY_LABEL = {
+    Show: 'fa-regular fa-eye',
+    Hide: 'fa-regular fa-eye-slash',
+    Restore: 'fa-solid fa-rotate-left',
+    'Delete Now': 'fa-solid fa-trash-can',
+    Pin: 'fa-solid fa-thumbtack',
+    Unpin: 'fa-solid fa-thumbtack',
+    Rename: 'fa-solid fa-pen',
+    Delete: 'fa-regular fa-trash-can',
+    'Show Trash': 'fa-regular fa-trash-can',
+    'Hide Trash': 'fa-solid fa-box-archive',
+    'Session Prompt': 'fa-solid fa-wand-magic-sparkles',
+    'Session Prompt: On': 'fa-solid fa-wand-magic-sparkles',
+    Copy: 'fa-regular fa-copy',
+    Copied: 'fa-solid fa-check'
+};
+
+function setButtonLabelWithIcon(button, label, iconClass) {
+    const resolvedIcon = iconClass || BUTTON_ICON_BY_LABEL[label] || 'fa-solid fa-circle';
+    button.innerHTML = `<i class="${resolvedIcon}" aria-hidden="true"></i><span>${escapeHtml(label)}</span>`;
+}
+
+function initializeStaticButtonIcons() {
+    setButtonLabelWithIcon(toggleApiKeyBtnEl, 'Show');
+    setButtonLabelWithIcon(toggleTrashBtnEl, 'Show Trash');
+    setButtonLabelWithIcon(sessionPromptBtnEl, 'Session Prompt');
+}
+
 // Initialize
 async function initializeApp() {
     loadSettings();
     loadTrustedDomains();
+    initializeStaticButtonIcons();
     await loadSessions();
     setupEventListeners();
     renderSessionList();
@@ -105,10 +134,10 @@ function updateSettingsUI() {
 function toggleApiKeyVisibility() {
     if (apiKeyInputEl.type === 'password') {
         apiKeyInputEl.type = 'text';
-        toggleApiKeyBtnEl.textContent = 'Hide';
+        setButtonLabelWithIcon(toggleApiKeyBtnEl, 'Hide');
     } else {
         apiKeyInputEl.type = 'password';
-        toggleApiKeyBtnEl.textContent = 'Show';
+        setButtonLabelWithIcon(toggleApiKeyBtnEl, 'Show');
     }
 }
 
@@ -385,7 +414,8 @@ function renderSessionList() {
 
 function updateTrashButtons() {
     const hasTrashItems = appState.sessions.some((session) => Boolean(session.deletedAt));
-    toggleTrashBtnEl.textContent = appState.showTrash ? 'Hide Trash' : 'Show Trash';
+    const trashLabel = appState.showTrash ? 'Hide Trash' : 'Show Trash';
+    setButtonLabelWithIcon(toggleTrashBtnEl, trashLabel);
     emptyTrashBtnEl.disabled = !hasTrashItems;
 }
 
@@ -393,7 +423,7 @@ function createSessionActionButton(label, title, onClick) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'session-action-btn';
-    button.textContent = label;
+    setButtonLabelWithIcon(button, label);
     button.title = title;
     button.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -972,7 +1002,36 @@ function addMessageToUI(content, role) {
         contentEl.innerHTML = renderPlainText(content);
     }
 
-    messageEl.appendChild(contentEl);
+    if (role === 'assistant' || role === 'assistant-error') {
+        const bubbleEl = document.createElement('div');
+        bubbleEl.className = 'message-bubble';
+
+        const copyBtnEl = document.createElement('button');
+        copyBtnEl.type = 'button';
+        copyBtnEl.className = 'copy-response-btn';
+        setButtonLabelWithIcon(copyBtnEl, 'Copy');
+        copyBtnEl.setAttribute('aria-label', 'Copy assistant response');
+
+        copyBtnEl.addEventListener('click', async () => {
+            const copied = await copyTextToClipboard(content);
+            if (!copied) {
+                showStatus('Copy failed. Please try again.', 'error');
+                return;
+            }
+
+            setButtonLabelWithIcon(copyBtnEl, 'Copied');
+            window.setTimeout(() => {
+                setButtonLabelWithIcon(copyBtnEl, 'Copy');
+            }, 1300);
+        });
+
+        bubbleEl.appendChild(contentEl);
+        bubbleEl.appendChild(copyBtnEl);
+        messageEl.appendChild(bubbleEl);
+    } else {
+        messageEl.appendChild(contentEl);
+    }
+
     chatMessagesEl.appendChild(messageEl);
 }
 
@@ -1044,6 +1103,39 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, (char) => htmlMap[char]);
 }
 
+async function copyTextToClipboard(text) {
+    const safeText = typeof text === 'string' ? text : String(text || '');
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(safeText);
+            return true;
+        }
+    } catch (error) {
+        // Fallback path below handles clipboard copy for older contexts.
+    }
+
+    const tempTextArea = document.createElement('textarea');
+    tempTextArea.value = safeText;
+    tempTextArea.setAttribute('readonly', '');
+    tempTextArea.style.position = 'absolute';
+    tempTextArea.style.left = '-9999px';
+    document.body.appendChild(tempTextArea);
+
+    tempTextArea.select();
+    tempTextArea.setSelectionRange(0, tempTextArea.value.length);
+
+    let copied = false;
+    try {
+        copied = document.execCommand('copy');
+    } catch (error) {
+        copied = false;
+    }
+
+    document.body.removeChild(tempTextArea);
+    return copied;
+}
+
 function setLoading(isLoading) {
     appState.isLoading = isLoading;
     sendBtnEl.disabled = isLoading;
@@ -1054,11 +1146,12 @@ function setLoading(isLoading) {
 
 function updateSessionPromptButton(session) {
     if (!session || session.deletedAt) {
-        sessionPromptBtnEl.textContent = 'Session Prompt';
+        setButtonLabelWithIcon(sessionPromptBtnEl, 'Session Prompt');
         return;
     }
 
-    sessionPromptBtnEl.textContent = session.systemPrompt ? 'Session Prompt: On' : 'Session Prompt';
+    const promptLabel = session.systemPrompt ? 'Session Prompt: On' : 'Session Prompt';
+    setButtonLabelWithIcon(sessionPromptBtnEl, promptLabel);
 }
 
 function showStatus(message, type = '') {
@@ -1092,7 +1185,7 @@ function exportChat() {
     }
 
     const timestamp = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
-    let content = 'LLM Chat Export\n';
+    let content = 'chatJRCSRG Export\n';
     content += `Conversation: ${activeSession.title}\n`;
     content += `Generated: ${timestamp} (Asia/Manila)\n`;
     content += `Server: ${appState.settings.baseUrl}\n`;

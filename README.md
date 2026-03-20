@@ -1,180 +1,121 @@
-# LLM Chat Web App
+# chatJRCSRG
 
-A modern, feature-rich web interface for interacting with a local LLM chat API server.
+chatJRCSRG is a web-based chat client for local or self-hosted LLM APIs. It provides a responsive conversation UI, session persistence with SQLite, and configurable request settings for day-to-day model usage.
 
-## Features
+## Highlights
 
-✨ **Core Features**
-- Clean, responsive chat interface
-- Real-time chat messaging
-- Multi-turn conversation support with automatic history management
-- Custom system prompt support
-- Rate limit information display
+- Clean chat interface with multi-turn context support
+- Session persistence in SQLite with automatic fallback to browser storage
+- Session organization tools: pinning, trash, restore, and search
+- Configurable API key, base URL, and default system prompt
+- Chat export to text format
+- Keyboard-friendly UX and mobile-responsive layout
 
-💾 **SQLite Session Storage**
-- Automatic chat history persistence in SQLite (`data/chat_sessions.db`)
-- Settings auto-save (API key, server URL, system prompt)
-- Export chat transcripts to text files
+## Architecture
 
-⚙️ **Settings Panel**
-- Configurable API key (password field for security)
-- Custom server URL
-- Default system prompt for all conversations
-- Clear chat history option
+- Frontend: [index.html](index.html), [style.css](style.css), [app.js](app.js)
+- Backend: [server.js](server.js) (Express)
+- Persisted state: [data/chat_sessions.db](data/chat_sessions.db)
+- Package metadata and scripts: [package.json](package.json)
 
-📱 **User Experience**
-- Keyboard support (Shift+Enter for new line, Enter to send)
-- Auto-scrolling to latest messages
-- Loading indicators and status messages
-- Responsive design (desktop and mobile friendly)
-- Syntax-aware message display
+## Requirements
 
-## Setup
+- Node.js 22 or newer (required for the built-in SQLite module used by [server.js](server.js))
+- npm (bundled with Node.js)
+- A reachable LLM API endpoint (default configured in app settings)
 
-### Prerequisites
-- A local LLM chat API server running at `http://10.0.0.84:8000` (or your custom URL)
-- A valid API key for your server
-- Any modern web browser (Chrome, Firefox, Safari, Edge)
+## Quick Start
 
-### Installation
+1. Install dependencies:
 
-1. **Install dependencies**
-  ```
-  npm install
-  ```
+```bash
+npm install
+```
 
-2. **Start the app server**
-  ```
-  npm start
-  ```
+2. Start the app:
 
-3. **Open in browser**
-  - Visit `http://localhost:8080`
+```bash
+npm start
+```
 
-The Node server serves the UI and stores chat sessions in SQLite.
+3. Open:
 
-3. **Configure Settings**
-   - Click the ⚙️ settings button in the top right
-   - Enter your **API Key** (required)
-   - Verify the **Server URL** (default: `http://10.0.0.84:8000`)
-   - Optionally set a **Default System Prompt**
-   - Click "Save Settings"
+```text
+http://localhost:8080
+```
 
-## Usage
+## One-Click Launch on Windows
 
-### Basic Chat
-1. Type your message in the input field at the bottom
-2. Press **Enter** to send (or click the Send button)
-3. Wait for the assistant's response
+This repository includes launcher scripts:
 
-### Multi-turn Conversations
-- The app automatically maintains conversation history
-- Each message includes the full conversation context
-- History is automatically sent to the server with each request
-- Maximum 40 turns in history (API limit)
+- [run-app.bat](run-app.bat): Double-click to start on Windows
+- [run-app.sh](run-app.sh): Bash launcher used by the batch file
 
-### Custom System Prompts
-- Set a default system prompt in settings (applies to all messages)
-- Or add custom prompts per conversation by formatting your message:
-  ```
-  [System: You are a Python expert]
-  Help me write a function...
-  ```
+Behavior:
 
-### Export Chat
-- Click the **Export Chat** button to download conversation as `.txt` file
-- Includes timestamp and all messages
-- Useful for documentation or backup
+- Validates that Node.js and npm are available
+- Installs dependencies if [node_modules](node_modules) is missing
+- Starts the Express server via npm start
 
-### Keyboard Shortcuts
-- **Enter** - Send message
-- **Shift + Enter** - New line in message
-- **Esc** (in settings) - Close settings panel
+## Configuration
 
-## API Details
+Open settings in the app and configure:
 
-### Endpoint
-- **POST** `/v1/chat/ask`
-- **Base URL**: `http://10.0.0.84:8000`
+- API key
+- LLM server base URL
+- Default system prompt
 
-### Request Format
+Default base URL in the UI points to a local-network server and can be changed at any time.
+
+## API Contract
+
+chatJRCSRG sends requests to:
+
+- Method: POST
+- Path: /v1/chat/ask
+
+Example request payload:
+
 ```json
 {
-  "message": "Your question here",
+  "message": "Explain retrieval-augmented generation",
   "history": [
-    {"role": "user", "content": "Previous message"},
-    {"role": "assistant", "content": "Previous response"}
+    { "role": "user", "content": "What is RAG?" },
+    { "role": "assistant", "content": "RAG combines..." }
   ],
-  "system_prompt": "Optional system prompt"
+  "system_prompt": "You are a concise technical assistant"
 }
 ```
 
-### Response Format
+Expected response shape:
+
 ```json
 {
-  "answer": "Response from the model",
-  "model": "gemma3:4b"
+  "answer": "RAG is...",
+  "model": "model-name"
 }
 ```
 
-### Rate Limits
-- 30 requests per minute per IP address
-- The app will show an error if you exceed this limit
+## Data and Persistence
 
-## Data Storage
-
-### SQLite (Primary)
-- **Conversation sessions** are stored in `data/chat_sessions.db`
-- Includes all tabs, pinned state, trash, titles, and message history
-- Improves browser responsiveness versus large `localStorage` payloads
-
-### Browser Local Storage (Fallback)
-- Automatically used only if SQLite state API is unavailable
-- Keeps app usable during backend outages
-
-### Clear Data
-- Soft-delete chats to Trash from the sidebar
-- Use **Empty Trash** for permanent delete
-- To fully reset data, stop server and delete `data/chat_sessions.db`
+- Primary storage: SQLite database at [data/chat_sessions.db](data/chat_sessions.db)
+- Automatic fallback: browser localStorage when backend state API is unavailable
+- To reset all persisted sessions, stop the app and remove [data/chat_sessions.db](data/chat_sessions.db)
 
 ## Troubleshooting
 
-### "Invalid API Key" Error
-- Check your API key in settings
-- Ensure it matches your server's configuration
-- Click "Show" to verify you didn't mistype it
+- "node is not recognized" or launcher exits early:
+  Install Node.js, then reopen terminal and run again.
+- Cannot connect to model server:
+  Verify base URL, API key, and that your LLM endpoint is reachable.
+- Sessions not persisting:
+  Confirm the server is running and the [data](data) directory is writable.
 
-### "Cannot connect to server"
-- Verify the server URL is correct (e.g., `http://10.0.0.84:8000`)
-- Check that your LLM server is running
-- Ensure there's no firewall blocking the connection
-- Try accessing the URL directly in your browser to test
+## Security Notes
 
-### Rate Limit Exceeded
-- Wait a minute before sending more messages
-- The app will show the rate limit error
-
-### Conversation Not Saving
-- Confirm Node server is running on `http://localhost:8080`
-- Check the `data` folder is writable
-- If server is down, app will use local fallback and show a status warning
-
-## Browser Compatibility
-
-- ✅ Chrome/Chromium (recommended)
-- ✅ Firefox
-- ✅ Safari
-- ✅ Edge
-- ✅ Mobile browsers
-
-## Security Note
-
-- API keys are stored in browser local storage (same security as cookies)
-- For sensitive deployments, consider:
-  - Using HTTPS instead of HTTP
-  - Storing API keys server-side instead of client-side
-  - Implementing proper authentication
+- API keys are stored client-side by the web app.
+- For production environments, prefer HTTPS and server-side credential handling.
 
 ## License
 
-Free to use and modify.
+Internal or private use unless a separate license is added.
