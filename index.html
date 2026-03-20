@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Chat Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>LLM Chat</h1>
+                <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="settings-panel hidden">
+            <div class="settings-content">
+                <h2>Settings</h2>
+                <div class="setting-group">
+                    <label for="apiKeyInput">API Key:</label>
+                    <input type="password" id="apiKeyInput" placeholder="Enter API key">
+                    <button id="toggleApiKeyBtn" class="toggle-btn">Show</button>
+                </div>
+
+                <div class="setting-group">
+                    <label for="baseUrlInput">Server URL:</label>
+                    <input type="text" id="baseUrlInput" placeholder="e.g., http://10.0.0.84:8000" value="http://10.0.0.84:8000">
+                </div>
+
+                <div class="setting-group">
+                    <label for="systemPromptInput">Default System Prompt:</label>
+                    <textarea id="systemPromptInput" placeholder="Leave empty for default behavior" rows="4"></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+                    <button id="clearHistoryBtn" class="btn btn-danger">Clear Current Chat</button>
+                    <button id="closeSettingsBtn" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <main class="main-content">
+            <aside class="session-sidebar">
+                <div class="session-sidebar-header">
+                    <h2>Conversations</h2>
+                    <button id="newSessionBtn" class="btn btn-primary new-session-btn">New Chat</button>
+                    <input id="sessionSearchInput" class="session-search-input" type="text" placeholder="Search conversations...">
+                    <div class="sidebar-tools">
+                        <button id="toggleTrashBtn" class="btn btn-secondary sidebar-tool-btn">Show Trash</button>
+                        <button id="emptyTrashBtn" class="btn btn-danger sidebar-tool-btn">Empty Trash</button>
+                    </div>
+                </div>
+                <div id="sessionList" class="session-list"></div>
+            </aside>
+
+            <section class="chat-panel">
+                <div class="chat-panel-header">
+                    <h2 id="activeSessionTitle">New Chat</h2>
+                    <button id="sessionPromptBtn" class="btn btn-secondary session-prompt-btn">Session Prompt</button>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="chat-messages"></div>
+
+                <!-- Chat Input Area -->
+                <div class="chat-input-area">
+                    <div class="input-controls">
+                        <div class="input-wrapper">
+                            <textarea
+                                id="messageInput"
+                                class="message-input"
+                                placeholder="Type your message... (Shift+Enter for new line, Enter to send)"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                        <div class="button-row">
+                            <button id="sendBtn" class="btn btn-primary send-btn">Send</button>
+                            <button id="exportBtn" class="btn btn-secondary">Export Chat</button>
+                        </div>
+                    </div>
+                    <div id="statusMessage" class="status-message"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="linkWarningModal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="linkWarningTitle">
+            <div class="modal-header">
+                <div>
+                    <p class="modal-eyebrow">External Link Notice</p>
+                    <h2 id="linkWarningTitle">You are about to open a link provided by the AI assistant</h2>
+                </div>
+                <button id="closeLinkWarningBtn" class="modal-close-btn" type="button" aria-label="Close link notice">x</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-copy">The assistant generated the external link below as part of its response.</p>
+                <div class="modal-domain-box">
+                    <span class="modal-link-label">Domain</span>
+                    <p id="linkWarningDomain" class="modal-domain-value"></p>
+                </div>
+                <div class="modal-link-box">
+                    <span class="modal-link-label">Requested destination</span>
+                    <p id="linkWarningUrl" class="modal-link-value"></p>
+                </div>
+                <p class="modal-copy">Please continue only if you are confident you want to visit this website. External content may change without notice, may contain inaccurate or inappropriate material, and is accessed entirely at your own discretion. This application does not endorse third-party content and is not responsible for any outcome resulting from opening the link.</p>
+                <label class="modal-checkbox-row" for="trustDomainCheckbox">
+                    <input id="trustDomainCheckbox" type="checkbox">
+                    <span>Do not show this warning again for this domain on this device.</span>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelLinkWarningBtn" class="btn btn-secondary" type="button">Cancel</button>
+                <button id="confirmLinkWarningBtn" class="btn btn-primary" type="button">Continue to Link</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

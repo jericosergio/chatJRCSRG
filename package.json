@@ -1,0 +1,13 @@
+{
+  "name": "llm-chat-sqlite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Session-based LLM chat UI with SQLite persistence",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
