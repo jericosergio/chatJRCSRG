@@ -1234,3 +1234,68 @@ window.addEventListener('beforeunload', () => {
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
+
+// Matrix Rain Background
+(function initMatrixRain() {
+    const canvas = document.getElementById('matrixCanvas');
+    if (!canvas) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        canvas.style.display = 'none';
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    const CHARS = 'JRCSG0123456789ABCDEFabcdef#!?><[]{}@%*+-~^';
+    const FS = 14;
+    let cols, drops;
+
+    function resize() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const newCols = Math.floor(w / FS);
+        canvas.width = w;
+        canvas.height = h;
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, w, h);
+        if (!drops || newCols !== cols) {
+            cols = newCols;
+            drops = Array.from({ length: cols }, () =>
+                Math.floor(Math.random() * -(h / FS))
+            );
+        }
+    }
+
+    function tick() {
+        ctx.fillStyle = 'rgba(5, 5, 5, 0.065)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${FS}px "Fira Code", "Courier New", monospace`;
+        ctx.shadowColor = '#a12124';
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = '#ff7070';
+        for (let i = 0; i < cols; i++) {
+            const ch = CHARS[Math.floor(Math.random() * CHARS.length)];
+            ctx.fillText(ch, i * FS, drops[i] * FS);
+            if (drops[i] * FS > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+        ctx.shadowBlur = 0;
+    }
+
+    resize();
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 150);
+    });
+
+    let lastTick = 0;
+    function frame(now) {
+        requestAnimationFrame(frame);
+        if (now - lastTick < 50) return;
+        lastTick = now;
+        tick();
+    }
+    requestAnimationFrame(frame);
+}());
