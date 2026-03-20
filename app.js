@@ -169,6 +169,12 @@ async function loadSessions() {
 
     try {
         const response = await fetch(API_STATE_URL, { cache: 'no-store' });
+        if (response.status === 403) {
+            // Server rejected the request — consent cookie is missing or invalid.
+            // Show the consent overlay; do NOT fall back to localStorage.
+            showConsentOverlay();
+            return;
+        }
         if (!response.ok) {
             throw new Error(`State API returned ${response.status}`);
         }
@@ -885,6 +891,7 @@ async function sendMessage() {
     setLoading(true);
     showStatus('Sending request...', 'loading');
     showThinkingBubble();
+    const requestStartTime = Date.now();
 
     try {
         const history = buildHistoryForRequest(activeSession.messages.slice(0, -1));
@@ -895,9 +902,10 @@ async function sendMessage() {
         }
 
         removeThinkingBubble();
+        const elapsedMs = Date.now() - requestStartTime;
         const assistantMessage = response.answer;
         appendMessageToActiveSession('assistant', assistantMessage);
-        addMessageToUI(assistantMessage, 'assistant');
+        addMessageToUI(assistantMessage, 'assistant', elapsedMs);
 
         saveSessions();
         renderSessionList();
@@ -988,8 +996,16 @@ async function sendChatRequest(message, history) {
     return data;
 }
 
+function formatElapsed(ms) {
+    const totalSecs = Math.round(ms / 1000);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    if (mins === 0) return `${secs}s`;
+    return `${mins}m ${secs}s`;
+}
+
 // UI Updates
-function addMessageToUI(content, role) {
+function addMessageToUI(content, role, elapsedMs = null) {
     const messageEl = document.createElement('div');
     messageEl.className = `message ${role}`;
 
@@ -1026,6 +1042,14 @@ function addMessageToUI(content, role) {
         });
 
         bubbleEl.appendChild(contentEl);
+
+        if (elapsedMs !== null) {
+            const timeEl = document.createElement('div');
+            timeEl.className = 'response-time';
+            timeEl.textContent = `\u23F1 ${formatElapsed(elapsedMs)}`;
+            bubbleEl.appendChild(timeEl);
+        }
+
         bubbleEl.appendChild(copyBtnEl);
         messageEl.appendChild(bubbleEl);
     } else {
@@ -1231,8 +1255,50 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
+function showConsentOverlay() {
+    const blocked = document.getElementById('cookieBlockedOverlay');
+    const consent = document.getElementById('cookieConsentOverlay');
+    if (blocked) blocked.classList.add('hidden');
+    if (consent) consent.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const consentOverlay = document.getElementById('cookieConsentOverlay');
+    const blockedOverlay = document.getElementById('cookieBlockedOverlay');
+    const acceptBtn = document.getElementById('cookieAcceptBtn');
+    const declineBtn = document.getElementById('cookieDeclineBtn');
+    const reviewBtn = document.getElementById('cookieReviewBtn');
+
+    acceptBtn.addEventListener('click', async () => {
+        try {
+            await fetch('/api/consent', { method: 'POST' });
+        } catch (_) {}
+        consentOverlay.classList.add('hidden');
+        initializeApp();
+    });
+
+    declineBtn.addEventListener('click', () => {
+        consentOverlay.classList.add('hidden');
+        blockedOverlay.classList.remove('hidden');
+    });
+
+    reviewBtn.addEventListener('click', () => {
+        blockedOverlay.classList.add('hidden');
+        consentOverlay.classList.remove('hidden');
+    });
+
+    // Check consent via the server — localStorage cannot be trusted here.
+    try {
+        const resp = await fetch('/api/consent', { cache: 'no-store' });
+        const data = await resp.json();
+        if (data.consented) {
+            initializeApp();
+        } else {
+            consentOverlay.classList.remove('hidden');
+        }
+    } catch (_) {
+        consentOverlay.classList.remove('hidden');
+    }
 });
 
 // Matrix Rain Background

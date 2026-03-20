@@ -36,6 +36,47 @@
 </head>
 <body>
     <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+
+    <!-- Cookie Consent Overlay -->
+    <div id="cookieConsentOverlay" class="cookie-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cookieConsentTitle">
+        <div class="cookie-card">
+            <div class="cookie-card-header">
+                <p class="modal-eyebrow"><i class="fa-solid fa-cookie-bite" aria-hidden="true"></i> Session Cookie Required</p>
+                <h2 id="cookieConsentTitle">This app uses a device cookie</h2>
+            </div>
+            <div class="cookie-card-body">
+                <p>chatJRCSRG uses a single browser cookie (<code>dvcid</code>) to identify your device and keep your chat sessions private. Without it, the app cannot save or display your conversations.</p>
+                <ul>
+                    <li>Contains only a random unique identifier — no personal data.</li>
+                    <li>Never shared with third parties or external services.</li>
+                    <li>Required for the app to function correctly.</li>
+                    <li>Can be cleared at any time via your browser settings.</li>
+                </ul>
+            </div>
+            <div class="cookie-card-actions">
+                <button id="cookieDeclineBtn" class="btn btn-secondary" type="button"><i class="fa-solid fa-ban" aria-hidden="true"></i><span>Decline</span></button>
+                <button id="cookieAcceptBtn" class="btn btn-primary" type="button"><i class="fa-solid fa-check" aria-hidden="true"></i><span>Accept &amp; Continue</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blocked Overlay (shown when cookie is declined) -->
+    <div id="cookieBlockedOverlay" class="cookie-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="cookieBlockedTitle">
+        <div class="cookie-card cookie-blocked-card">
+            <div class="cookie-card-header">
+                <p class="modal-eyebrow"><i class="fa-solid fa-ban" aria-hidden="true"></i> Access Denied</p>
+                <h2 id="cookieBlockedTitle">Cookie Required to Proceed</h2>
+            </div>
+            <div class="cookie-card-body">
+                <p>You have declined the required session cookie. This app cannot function without it — sessions cannot be saved or retrieved.</p>
+                <p>To use chatJRCSRG, please accept the cookie notice. You can also clear your browser storage and reload the page to start over.</p>
+            </div>
+            <div class="cookie-card-actions">
+                <button id="cookieReviewBtn" class="btn btn-primary" type="button"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span>Review Cookie Notice</span></button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <header class="header">
